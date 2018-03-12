@@ -28,7 +28,6 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AppServer));
             this.txtMessage = new System.Windows.Forms.TextBox();
             this.txtSendMessage = new System.Windows.Forms.TextBox();
             this.btnSend = new System.Windows.Forms.Button();
@@ -74,7 +73,6 @@
             this.Controls.Add(this.btnSend);
             this.Controls.Add(this.txtSendMessage);
             this.Controls.Add(this.txtMessage);
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(5, 4, 5, 4);
             this.Name = "AppServer";
             this.Text = "ネイティブテスト";
