@@ -15,6 +15,7 @@ namespace ParallelHybridApp
         public List<WebSocketSession> session_ary = new List<WebSocketSession>();
 
         SuperWebSocket.WebSocketServer server;
+        SuperWebSocket.WebSocketServer server_ssl;
 
         public AppServer()
         {
@@ -25,20 +26,46 @@ namespace ParallelHybridApp
         {
             frm = this;
 
-            //コンフィグオブジェクト作成
-            var rootConfig = new SuperSocket.SocketBase.Config.RootConfig();
-            var serverConfig = new SuperSocket.SocketBase.Config.ServerConfig()
+            var server_config = new SuperSocket.SocketBase.Config.ServerConfig()
             {
-                Port = 2013,
+                Port = 80,
                 Ip = "127.0.0.1",
                 MaxConnectionNumber = 100,
                 Mode = SuperSocket.SocketBase.SocketMode.Tcp,
                 Name = "SuperWebSocket Sample Server",
-                MaxRequestLength = 1024 * 1024 * 10
+                MaxRequestLength = 1024 * 1024 * 10,
             };
 
-            //サーバーオブジェクト作成＆初期化
+            setup_server(ref server, server_config);
+
+            var server_config_ssl = new SuperSocket.SocketBase.Config.ServerConfig()
+            {
+                Port = 443,
+                Ip = "127.0.0.1",
+                MaxConnectionNumber = 100,
+                Mode = SuperSocket.SocketBase.SocketMode.Tcp,
+                Name = "SuperWebSocket Sample Server",
+                MaxRequestLength = 1024 * 1024 * 10,
+                Security = "tls",
+                Certificate = new SuperSocket.SocketBase.Config.CertificateConfig
+                {
+                    FilePath = @"test.pfx",
+                    Password = "test"
+                }
+            };
+
+            setup_server(ref server_ssl, server_config_ssl);
+
+
+        }
+
+        private void setup_server(ref WebSocketServer server, SuperSocket.SocketBase.Config.ServerConfig serverConfig)
+        {
+            var rootConfig = new SuperSocket.SocketBase.Config.RootConfig();
+
             server = new SuperWebSocket.WebSocketServer();
+
+            //サーバーオブジェクト作成＆初期化
             server.Setup(rootConfig, serverConfig);
 
             //イベントハンドラの設定
@@ -105,7 +132,7 @@ namespace ParallelHybridApp
             frm = null;
 
             server.Stop();
-
+            server_ssl.Stop();
         }
         
         public void add_log(string time, String log)
