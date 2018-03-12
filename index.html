@@ -26,7 +26,12 @@ function connectSocketServer(callback) {
     console.log("* Connecting to server ..");
 
     // create a new websocket and connect
-    ws = new window[support]('ws://127.0.0.1:2013/');
+    try{
+    	ws = new window[support]('ws://127.0.0.1:80/');
+    }
+    catch(ex){
+    	ws = new window[support]('wss://127.0.0.1:443/');
+    }
 
     // when data is comming from the server, this metod is called
     ws.onmessage = function (evt) {
@@ -77,20 +82,20 @@ function add_message(message){
 
 function connect(){
 
-    $("#_signal_green").attr("src", "img/signal_green_off.png");
-    $("#_signal_red").attr("src", "img/signal_red_off.png");
+    $("#_signal_green").attr("src", "signal_green_off.png");
+    $("#_signal_red").attr("src", "signal_red_off.png");
 
     connectSocketServer(function(state){
 
         if( state == "open" ){
-            $("#_signal_green").attr("src", "img/signal_green_on.png");
-            $("#_signal_red").attr("src", "img/signal_red_off.png");
+            $("#_signal_green").attr("src", "signal_green_on.png");
+            $("#_signal_red").attr("src", "signal_red_off.png");
 
             $("#_button_send").removeAttr("disabled");
         }
         else{
-            $("#_signal_green").attr("src", "img/signal_green_off.png");
-            $("#_signal_red").attr("src", "img/signal_red_on.png");
+            $("#_signal_green").attr("src", "signal_green_off.png");
+            $("#_signal_red").attr("src", "signal_red_on.png");
 
             $("#_button_send").attr("disabled", "disabled");
         }
@@ -159,9 +164,9 @@ $(document).ready(function(){
         <div style="display:table-row;">
 			<div style="display:table-cell; width:150px;">
 				<span style="font-size:11px;">ネイティブアプリ：</span>
-				<img id="_signal_green" src="img/signal_green_off.png" style="width:18px;"
+				<img id="_signal_green" src="signal_green_off.png" style="width:18px;"
 					 onclick="connect();"/>
-				<img id="_signal_red" src="img/signal_red_on.png" style="width:18px; "
+				<img id="_signal_red" src="signal_red_on.png" style="width:18px; "
 					 onclick="connect();"/>
 			</div>
 			<div style="display:table-cell; text-align: right;">
