@@ -3,7 +3,7 @@ ParallelHybridApp
 
 ## About
 
-This is sample that hybrid work of web application and native application.
+This sample is hybrid work of web application and native application. 
 
 ## Demo
 
