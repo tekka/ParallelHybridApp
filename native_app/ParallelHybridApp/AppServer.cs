@@ -12,7 +12,7 @@ namespace ParallelHybridApp
     {
         public List<String> log_ary = new List<string>();
         public static AppServer frm;
-        public List<WebSocketSession> session_ary = new List<WebSocketSession>();
+        public Dictionary<string, WebSocketSession> session_ary = new Dictionary<string, WebSocketSession>();
 
         SuperWebSocket.WebSocketServer server;
         SuperWebSocket.WebSocketServer server_ssl;
@@ -87,7 +87,8 @@ namespace ParallelHybridApp
         {
             frm.Invoke((MethodInvoker)delegate () {
 
-                frm.session_ary.Add(session);
+                frm.session_ary.Add(session.SessionID, session);
+
                 frm.add_log(DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"), "接続");
 
             });
@@ -121,6 +122,8 @@ namespace ParallelHybridApp
         {
             if(frm != null)
             {
+                frm.session_ary.Remove(session.SessionID);
+
                 frm.Invoke((MethodInvoker)delegate () {
                     frm.add_log(DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"), "切断");
                 });
@@ -144,7 +147,7 @@ namespace ParallelHybridApp
         //メッセージ送信
         private void send_message_to_sessions(string message)
         {
-            foreach(var session in session_ary)
+            foreach(var session in session_ary.Values)
             {
                 MessageData send = new MessageData();
 
