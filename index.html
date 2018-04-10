@@ -26,12 +26,7 @@ function connectSocketServer(callback) {
     console.log("* Connecting to server ..");
 
     // create a new websocket and connect
-    try{
-    	ws = new window[support]('ws://127.0.0.1:80/');
-    }
-    catch(ex){
-    	ws = new window[support]('wss://127.0.0.1:443/');
-    }
+    ws = new window[support]('wss://local.tekka-local.work/');
 
     // when data is comming from the server, this metod is called
     ws.onmessage = function (evt) {

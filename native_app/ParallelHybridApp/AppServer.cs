@@ -50,7 +50,7 @@ namespace ParallelHybridApp
                 Certificate = new SuperSocket.SocketBase.Config.CertificateConfig
                 {
                     FilePath = @"test.pfx",
-                    Password = "test"
+                    Password = "tekka"
                 }
             };
 
