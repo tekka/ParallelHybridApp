@@ -3,7 +3,12 @@ using SuperWebSocket;
 using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
-
+using System.Security.Cryptography.X509Certificates;
+using System.Net.Security;
+using System.Net.Sockets;
+using System.Net;
+using System.Configuration;
+using System.Text;
 
 namespace ParallelHybridApp
 {
@@ -14,7 +19,6 @@ namespace ParallelHybridApp
         public static AppServer frm;
         public Dictionary<string, WebSocketSession> session_ary = new Dictionary<string, WebSocketSession>();
 
-        SuperWebSocket.WebSocketServer server;
         SuperWebSocket.WebSocketServer server_ssl;
 
         public AppServer()
@@ -22,40 +26,41 @@ namespace ParallelHybridApp
             InitializeComponent();
         }
 
+
         private void Form1_Load(object sender, EventArgs e)
         {
             frm = this;
 
-            var server_config = new SuperSocket.SocketBase.Config.ServerConfig()
+            try
             {
-                Port = 80,
-                Ip = "127.0.0.1",
-                MaxConnectionNumber = 100,
-                Mode = SuperSocket.SocketBase.SocketMode.Tcp,
-                Name = "SuperWebSocket Sample Server",
-                MaxRequestLength = 1024 * 1024 * 10,
-            };
-
-            setup_server(ref server, server_config);
-
-            var server_config_ssl = new SuperSocket.SocketBase.Config.ServerConfig()
-            {
-                Port = 443,
-                Ip = "127.0.0.1",
-                MaxConnectionNumber = 100,
-                Mode = SuperSocket.SocketBase.SocketMode.Tcp,
-                Name = "SuperWebSocket Sample Server",
-                MaxRequestLength = 1024 * 1024 * 10,
-                Security = "tls",
-                Certificate = new SuperSocket.SocketBase.Config.CertificateConfig
+                var server_config_ssl = new SuperSocket.SocketBase.Config.ServerConfig()
                 {
-                    FilePath = @"test.pfx",
-                    Password = "tekka"
-                }
-            };
+                    Port = 443,
+                    Ip = "127.0.0.1",
+                    MaxConnectionNumber = 100,
+                    Mode = SuperSocket.SocketBase.SocketMode.Tcp,
+                    Name = "SuperWebSocket Sample Server",
+                    MaxRequestLength = 1024 * 1024 * 10,
+                    Security = "tls",
+                    Certificate = new SuperSocket.SocketBase.Config.CertificateConfig
+                    {
+                        FilePath = ConfigurationManager.AppSettings["cert_file_path"],
+                        Password = ConfigurationManager.AppSettings["cert_password"]
+                    }
+                };
 
-            setup_server(ref server_ssl, server_config_ssl);
+                setup_server(ref server_ssl, server_config_ssl);
 
+                valid_cert();
+            }
+            catch(Exception ex)
+            {
+                reflesh_cert();
+
+                MessageBox.Show("証明書を更新しました。\nアプリケーションを再起動します。");
+
+                Application.Restart();
+            }
 
         }
 
@@ -80,19 +85,18 @@ namespace ParallelHybridApp
             server.Start();
 
         }
-            
+
 
         //接続
         static void HandleServerNewSessionConnected(SuperWebSocket.WebSocketSession session)
         {
-            frm.Invoke((MethodInvoker)delegate () {
+            frm.session_ary.Add(session.SessionID, session);
 
-                frm.session_ary.Add(session.SessionID, session);
-
+            frm.Invoke((MethodInvoker)delegate ()
+            {
                 frm.add_log(DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"), "接続");
-
             });
-            
+
         }
 
         //メッセージ受信
@@ -120,11 +124,12 @@ namespace ParallelHybridApp
         static void HandleServerSessionClosed(SuperWebSocket.WebSocketSession session,
                                                     SuperSocket.SocketBase.CloseReason e)
         {
-            if(frm != null)
+            if (frm != null)
             {
                 frm.session_ary.Remove(session.SessionID);
 
-                frm.Invoke((MethodInvoker)delegate () {
+                frm.Invoke((MethodInvoker)delegate ()
+                {
                     frm.add_log(DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"), "切断");
                 });
             }
@@ -134,10 +139,9 @@ namespace ParallelHybridApp
         {
             frm = null;
 
-            server.Stop();
             server_ssl.Stop();
         }
-        
+
         public void add_log(string time, String log)
         {
             log = "[" + time + "] " + log + "\r\n";
@@ -147,7 +151,7 @@ namespace ParallelHybridApp
         //メッセージ送信
         private void send_message_to_sessions(string message)
         {
-            foreach(var session in session_ary.Values)
+            foreach (var session in session_ary.Values)
             {
                 MessageData send = new MessageData();
 
@@ -166,6 +170,54 @@ namespace ParallelHybridApp
         private void btnSend_Click(object sender, EventArgs e)
         {
             send_message_to_sessions(this.txtSendMessage.Text);
+        }
+
+        private static Boolean RemoteCertificateValidationCallback(Object sender,
+        X509Certificate certificate,
+        X509Chain chain,
+        SslPolicyErrors sslPolicyErrors)
+        {
+            if (sslPolicyErrors == SslPolicyErrors.None)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private void valid_cert()
+        {
+            String hostName = ConfigurationManager.AppSettings["cert_local_host"];
+            Int32 port = 443;
+
+            using (TcpClient client = new TcpClient())
+            {
+                //接続先Webサーバー名からIPアドレスをルックアップ    
+                IPAddress[] ipAddresses = Dns.GetHostAddresses(hostName);
+
+                //Webサーバーに接続する
+                client.Connect(new IPEndPoint(ipAddresses[0], port));
+
+                //SSL通信の開始
+                using (SslStream sslStream =
+                    new SslStream(client.GetStream(), false, RemoteCertificateValidationCallback))
+                {
+                    //サーバーの認証を行う
+                    //これにより、RemoteCertificateValidationCallbackメソッドが呼ばれる
+                    sslStream.AuthenticateAsClient(hostName);
+                }
+            }
+        }
+
+        private void reflesh_cert()
+        {
+            //証明書の更新
+
+            var cert_file_url = ConfigurationManager.AppSettings["cert_file_url"];
+            var cert_file_path = ConfigurationManager.AppSettings["cert_file_path"];
+
+            var wc = new WebClient();
+            wc.DownloadFile(cert_file_url, cert_file_path);
         }
     }
 }
