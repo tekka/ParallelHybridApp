@@ -1,6 +1,9 @@
 ParallelHybridApp
 ===
 
+役に立ったら ⭐ をお願いします  
+[![GitHub Repo stars](https://img.shields.io/github/stars/tekka/ParallelHybridApp?style=social)](https://github.com/tekka/ParallelHybridApp/stargazers)
+
 ## About
 
 This is sample that hybrid work of web application and native application.
